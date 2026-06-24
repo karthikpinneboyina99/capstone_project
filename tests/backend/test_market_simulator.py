@@ -272,6 +272,41 @@ class TestDailySummary:
         for ticker, bar in summary.items():
             assert bar.close > 0, f"{ticker} has non-positive close"
 
+    def test_respects_as_of_date_no_lookahead(self):
+        """Bars returned must not be dated after as_of — critical for backtester correctness."""
+        as_of = date(2021, 6, 15)
+        summary = SIM.daily_summary(as_of)
+        for ticker, bar in summary.items():
+            assert bar.date <= as_of, (
+                f"{ticker} bar.date {bar.date} is after as_of {as_of} — lookahead detected"
+            )
+
+    def test_different_as_of_dates_differ(self):
+        """Prices on different historical dates must differ (GBM paths are not constant)."""
+        s1 = SIM.daily_summary(date(2021, 1, 4))
+        s2 = SIM.daily_summary(date(2022, 1, 3))
+        aapl_prices = {s1["AAPL"].close, s2["AAPL"].close}
+        assert len(aapl_prices) == 2, "daily_summary returned same price for different dates"
+
+
+# ---------------------------------------------------------------------------
+# Edge cases — date range
+# ---------------------------------------------------------------------------
+
+class TestEdgeCaseDateRanges:
+    def test_inverted_range_returns_empty(self):
+        """from_date > to_date should return an empty DataFrame, not raise."""
+        df = SIM.get_bars("AAPL", date(2023, 6, 30), date(2023, 1, 1))
+        assert isinstance(df, pd.DataFrame)
+        assert len(df) == 0
+        assert list(df.columns) == EXPECTED_COLS
+
+    def test_future_from_date_before_sim_origin_returns_empty(self):
+        """Requesting a range entirely before _SIM_ORIGIN returns empty."""
+        df = SIM.get_bars("AAPL", date(2019, 1, 1), date(2019, 12, 31))
+        assert isinstance(df, pd.DataFrame)
+        assert len(df) == 0
+
 
 # ---------------------------------------------------------------------------
 # DB replay mode (mocked SQLAlchemy session)

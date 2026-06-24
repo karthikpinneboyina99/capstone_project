@@ -146,6 +146,13 @@ class TestPagination:
 # Rate-limit retry
 # ---------------------------------------------------------------------------
 
+def _mock_5xx(status_code: int = 503):
+    resp = MagicMock()
+    resp.status_code = status_code
+    resp.raise_for_status = MagicMock()
+    return resp
+
+
 class TestRetryLogic:
     def test_retries_on_429_then_succeeds(self, provider):
         responses = [_mock_429(), _mock_429(), _mock_response(_aggs_response())]
@@ -167,6 +174,21 @@ class TestRetryLogic:
              patch("time.sleep") as mock_sleep:
             provider.get_bars(["AAPL"], date(2023, 1, 1), date(2023, 1, 31))
         mock_sleep.assert_called_once_with(1)  # 2^0 = 1
+
+    def test_retries_on_502_then_succeeds(self, provider):
+        """Transient 5xx errors must be retried, not raised immediately."""
+        responses = [_mock_5xx(502), _mock_5xx(503), _mock_response(_aggs_response())]
+        with patch("requests.get", side_effect=responses), \
+             patch("time.sleep"):
+            result = provider.get_bars(["AAPL"], date(2023, 1, 1), date(2023, 1, 31))
+        assert len(result["AAPL"]) == 1
+
+    def test_raises_after_max_5xx_retries(self, provider):
+        responses = [_mock_5xx(500)] * 5
+        with patch("requests.get", side_effect=responses), \
+             patch("time.sleep"):
+            with pytest.raises(RuntimeError, match="max retries exceeded"):
+                provider.get_bars(["AAPL"], date(2023, 1, 1), date(2023, 1, 31))
 
 
 # ---------------------------------------------------------------------------
@@ -204,6 +226,27 @@ class TestGetSnapshot:
         bar = result["AAPL"]
         assert bar.ticker == "AAPL"
         assert bar.close == pytest.approx(187.0)
+
+    def test_date_derived_from_updated_timestamp(self, provider):
+        """Bar.date must come from the snapshot's `updated` ns timestamp, not date.today()."""
+        # 1_703_880_601_000_000_000 ns = 2023-12-29 20:10:01 UTC = 2023-12-29 ET
+        snap_body = {
+            "status": "OK",
+            "tickers": [
+                {
+                    "ticker": "AAPL",
+                    "day": {"o": 185.0, "h": 188.5, "l": 184.0, "c": 187.0, "v": 60_000_000},
+                    "updated": 1_703_880_601_000_000_000,
+                }
+            ],
+        }
+        resp = _mock_response(snap_body)
+        with patch("requests.get", return_value=resp):
+            result = provider.get_snapshot(["AAPL"])
+        bar = result["AAPL"]
+        assert bar.date.year == 2023
+        assert bar.date.month == 12
+        assert bar.date.day == 29
 
     def test_falls_back_to_prevday(self, provider):
         snap_body = {
@@ -254,12 +297,14 @@ class TestGetLatestQuote:
         assert q.bid == pytest.approx(187.05)
         assert q.ask == pytest.approx(187.05)
 
-    def test_starter_plan_no_lastquote(self, provider):
+    def test_starter_plan_falls_back_to_last_trade_price(self, provider):
+        """When lastQuote is absent (Starter plan), bid/ask must fall back to lastTrade.p."""
         snap_body = {
             "status": "OK",
             "tickers": [
                 {
                     "ticker": "AAPL",
+                    "lastTrade": {"p": 186.50, "s": 100},
                     # No lastQuote key — Starter plan
                     "updated": 1_703_880_601_000_000_000,
                 }
@@ -268,10 +313,20 @@ class TestGetLatestQuote:
         resp = _mock_response(snap_body)
         with patch("requests.get", return_value=resp):
             result = provider.get_latest_quote(["AAPL"])
-        # Defaults to 0.0 when lastQuote is absent
         q = result["AAPL"]
-        assert q.bid == pytest.approx(0.0)
-        assert q.ask == pytest.approx(0.0)
+        assert q.bid == pytest.approx(186.50)
+        assert q.ask == pytest.approx(186.50)
+
+    def test_no_lastquote_no_lasttrade_defaults_zero(self, provider):
+        """Both absent → 0.0 sentinel (edge case, e.g. pre-market with no trades)."""
+        snap_body = {
+            "status": "OK",
+            "tickers": [{"ticker": "AAPL", "updated": 1_703_880_601_000_000_000}],
+        }
+        resp = _mock_response(snap_body)
+        with patch("requests.get", return_value=resp):
+            result = provider.get_latest_quote(["AAPL"])
+        assert result["AAPL"].bid == pytest.approx(0.0)
 
 
 # ---------------------------------------------------------------------------
