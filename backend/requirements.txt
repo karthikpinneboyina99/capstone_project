@@ -1,0 +1,36 @@
+# Core framework
+fastapi
+uvicorn[standard]
+
+# Database
+sqlalchemy
+psycopg2-binary
+alembic
+
+# Validation / config
+pydantic
+pydantic-settings
+python-dotenv
+
+# Market data
+yfinance
+alpaca-py
+requests
+
+# Data / ML
+pandas
+numpy
+scikit-learn
+xgboost
+ta
+
+# LLM (OpenAI-compatible client pointed at Cerebras)
+openai
+
+# Scheduling
+apscheduler
+
+# Testing
+pytest
+pytest-asyncio
+httpx
