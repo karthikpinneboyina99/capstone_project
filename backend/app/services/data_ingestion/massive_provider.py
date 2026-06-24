@@ -49,10 +49,13 @@ class MassiveProvider(MarketDataProvider):
         out: dict[str, Quote] = {}
         for ticker, snap in snaps.items():
             lt = snap.get("lastQuote") or {}
+            # Fall back to last trade price so bid/ask are never 0.0 on Starter plan
+            last_trade_price = (snap.get("lastTrade") or {}).get("p", 0.0)
+            bid_ask = lt.get("P", last_trade_price)
             out[ticker] = Quote(
                 ticker=ticker,
-                bid=lt.get("P", 0.0),
-                ask=lt.get("P", 0.0),  # Starter plan: bid == ask == last trade price
+                bid=bid_ask,
+                ask=bid_ask,
                 bid_size=lt.get("S", 0),
                 ask_size=lt.get("S", 0),
                 timestamp=pd.Timestamp(snap.get("updated", 0), unit="ns", tz="UTC"),
@@ -64,9 +67,17 @@ class MassiveProvider(MarketDataProvider):
         out: dict[str, Bar] = {}
         for ticker, snap in snaps.items():
             day = snap.get("day") or snap.get("prevDay") or {}
+            updated_ns = snap.get("updated", 0)
+            bar_date = (
+                pd.Timestamp(updated_ns, unit="ns", tz="UTC")
+                .tz_convert("America/New_York")
+                .date()
+                if updated_ns
+                else date.today()
+            )
             out[ticker] = Bar(
                 ticker=ticker,
-                date=date.today(),
+                date=bar_date,
                 open=day.get("o", 0.0),
                 high=day.get("h", 0.0),
                 low=day.get("l", 0.0),
@@ -125,12 +136,17 @@ class MassiveProvider(MarketDataProvider):
         body = self._get(url, {"tickers": ",".join(tickers)})
         return {item["ticker"]: item for item in (body.get("tickers") or [])}
 
+    _RETRY_ON = {429, 500, 502, 503, 504}
+
     def _get(self, url: str, params: dict) -> dict:
-        """GET with retry on 429. Raises on non-recoverable errors."""
-        full_params = {**params, "apiKey": self._key}
+        """GET with retry on 429 and transient 5xx. Raises on non-recoverable errors."""
+        # Don't append apiKey when it is already embedded in the URL (next_url pagination).
+        full_params = {**params}
+        if "apiKey" not in url:
+            full_params["apiKey"] = self._key
         for attempt in range(5):
             response = requests.get(url, params=full_params, timeout=15)
-            if response.status_code == 429:
+            if response.status_code in self._RETRY_ON:
                 time.sleep(2 ** attempt)
                 continue
             response.raise_for_status()

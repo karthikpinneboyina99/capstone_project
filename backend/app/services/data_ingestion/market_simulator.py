@@ -14,11 +14,9 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass
 from datetime import date, timedelta
-from typing import Optional
 
 import numpy as np
 import pandas as pd
-from pandas.tseries.offsets import BDay
 
 from .market_interface import Bar, Quote
 
@@ -131,12 +129,34 @@ class MarketSimulator:
             ask=round(bar.close + spread / 2, 4),
             bid_size=100,
             ask_size=100,
-            timestamp=pd.Timestamp.utcnow(),
+            timestamp=pd.Timestamp.now("UTC"),
         )
 
     def daily_summary(self, as_of: date) -> dict[str, Bar]:
         tickers = list(_KNOWN.keys())
-        return {t: self.latest_bar(t) for t in tickers}
+        result: dict[str, Bar] = {}
+        for t in tickers:
+            df = self.get_bars(t, as_of - timedelta(days=1), as_of)
+            if df.empty:
+                p = _params_for(t).start_price
+                result[t] = Bar(
+                    ticker=t, date=as_of,
+                    open=p, high=p, low=p, close=p,
+                    volume=1_000_000, vwap=p,
+                )
+            else:
+                row = df.iloc[-1]
+                result[t] = Bar(
+                    ticker=t,
+                    date=row["date"].date(),
+                    open=float(row["open"]),
+                    high=float(row["high"]),
+                    low=float(row["low"]),
+                    close=float(row["close"]),
+                    volume=int(row["volume"]),
+                    vwap=float(row["vwap"]) if row["vwap"] is not None else None,
+                )
+        return result
 
     # ------------------------------------------------------------------
     # DB replay
