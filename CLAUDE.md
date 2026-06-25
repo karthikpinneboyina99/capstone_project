@@ -4,7 +4,9 @@ An AI-assisted research and **paper-trading** platform for US stocks/ETFs: ML si
 
 The full plan — architecture, tech stack, database schema, and the phase-by-phase build checklist — is imported below. Treat it as the source of truth.
 
-@planning/plan.md
+`@planning/plan.md`
+
+The market data component is completed and is summarized in the file `planning/MARKET_DATA_SUMMARY.md` amd more details are in the `planning/archive` folder.consult these docs only when required.The remainder of the platform is still to be developed.
 
 ## Rules for working in this repo
 
