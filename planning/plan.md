@@ -29,12 +29,12 @@ An AI-assisted research and paper-trading platform for US stocks/ETFs. It:
 
 The capstone is "done" when all of the following are true:
 
-- [ ] A documented ML pipeline turns OHLCV + technical indicators into a daily signal score for every symbol on the watchlist.
-- [ ] An LLM reasoning layer consumes that signal + context and returns a structured, explainable decision (buy/sell/hold, size, confidence, rationale).
-- [ ] A backtesting engine replays at least 2 years of history with no lookahead bias and reports CAGR, Sharpe ratio, max drawdown, win rate.
-- [ ] The same decision pipeline runs against Alpaca paper trading on a daily schedule and logs every decision and trade.
-- [ ] A React dashboard shows live portfolio state, today's signals with rationale, trade history, and backtest results.
-- [ ] Backend has an automated test suite (pytest) covering features, ML inference, LLM response parsing, backtest math, and risk checks.
+- [x] A documented ML pipeline turns OHLCV + technical indicators into a daily signal score for every symbol on the watchlist.
+- [x] An LLM reasoning layer consumes that signal + context and returns a structured, explainable decision (buy/sell/hold, size, confidence, rationale).
+- [x] A backtesting engine replays at least 2 years of history with no lookahead bias and reports CAGR, Sharpe ratio, max drawdown, win rate.
+- [x] The same decision pipeline runs against Alpaca paper trading on a daily schedule and logs every decision and trade.
+- [x] A React dashboard shows live portfolio state, today's signals with rationale, trade history, and backtest results.
+- [x] Backend has an automated test suite (pytest) covering features, ML inference, LLM response parsing, backtest math, and risk checks.
 - [ ] The whole stack runs locally via `docker-compose up` and is deployed somewhere reachable by URL.
 - [ ] README + this plan are current and a 5-10 minute demo can be given end-to-end.
 
@@ -207,9 +207,9 @@ Build these as SQLAlchemy models in `backend/app/models/`, then generate the Ale
 
 Definition of done:
 
-- [ ] All tables modeled in SQLAlchemy with correct FKs and indexes (on `(instrument_id, timestamp)` for price_bars; unique on `(instrument_id, as_of_date, model_slug, prompt_version)` for llm_decisions)
-- [ ] Alembic initialized, first migration generated and applied
-- [ ] `database/schema.sql` auto-generated from Alembic via `pg_dump --schema-only` — not maintained manually
+- [x] All tables modeled in SQLAlchemy with correct FKs and indexes (on `(instrument_id, timestamp)` for price_bars; unique on `(instrument_id, as_of_date, model_slug, prompt_version)` for llm_decisions)
+- [x] Alembic initialized, first migration generated and applied
+- [x] `database/schema.sql` auto-generated from Alembic via `pg_dump --schema-only` — not maintained manually
 
 ---
 
@@ -242,10 +242,10 @@ Definition of done:
 
 Definition of done:
 
-- [ ] `services/features/` computes the full feature set from `price_bars`, covered by unit tests with known inputs/outputs
-- [ ] `services/ml/train.py` trains XGBoost with walk-forward validation and saves a versioned model artifact
-- [ ] `services/ml/predict.py` loads a model version and returns a signal score for (symbol, as_of_date) using only data available as of that date
-- [ ] Out-of-sample validation metrics documented (even if mediocre — document honestly, this is a learning exercise, not a magic-alpha claim)
+- [x] `services/features/` computes the full feature set from `price_bars`, covered by unit tests with known inputs/outputs
+- [x] `services/ml/train.py` trains XGBoost with walk-forward validation and saves a versioned model artifact
+- [x] `services/ml/predict.py` loads a model version and returns a signal score for (symbol, as_of_date) using only data available as of that date
+- [x] Out-of-sample validation metrics documented (even if mediocre — document honestly, this is a learning exercise, not a magic-alpha claim)
 
 ---
 
@@ -282,10 +282,10 @@ This is the part that makes it an "AI" trading workstation rather than a plain q
 
 Definition of done:
 
-- [ ] `services/llm_reasoning/` builds the context payload, calls the LLM (Cerebras, `gpt-oss-120b`) with a versioned prompt, and parses a validated structured response (Pydantic model validates the JSON)
-- [ ] Decisions and raw responses are persisted to `llm_decisions`
-- [ ] Unit tests mock the OpenAI client and verify parsing/validation logic, including malformed-response handling
-- [ ] A documented decision on the cost/latency mitigation chosen for backtesting
+- [x] `services/llm_reasoning/` builds the context payload, calls the LLM (Cerebras, `gpt-oss-120b`) with a versioned prompt, and parses a validated structured response (Pydantic model validates the JSON)
+- [x] Decisions and raw responses are persisted to `llm_decisions`
+- [x] Unit tests mock the OpenAI client and verify parsing/validation logic, including malformed-response handling
+- [x] A documented decision on the cost/latency mitigation chosen for backtesting
 
 ---
 
@@ -315,10 +315,10 @@ Build a straightforward event-driven (day-by-day) backtester — don't reach for
 
 Definition of done:
 
-- [ ] `services/backtesting/engine.py` runs a full historical replay with no lookahead bias (verified by the shuffle sanity check)
-- [ ] Metrics module unit-tested against hand-computed examples (especially Sharpe and max drawdown)
-- [ ] At least one full backtest run stored in `backtest_runs` with results, comparable against a buy-and-hold baseline
-- [ ] Results are honestly reported in the README/demo even if the strategy underperforms buy-and-hold — the capstone is evaluated on rigor, not on beating the market
+- [x] `services/backtesting/engine.py` runs a full historical replay with no lookahead bias (verified by the shuffle sanity check)
+- [x] Metrics module unit-tested against hand-computed examples (especially Sharpe and max drawdown)
+- [x] At least one full backtest run stored in `backtest_runs` with results, comparable against a buy-and-hold baseline
+- [x] Results are honestly reported in the README/demo even if the strategy underperforms buy-and-hold — the capstone is evaluated on rigor, not on beating the market
 
 ---
 
@@ -343,8 +343,8 @@ All thresholds are environment variables added to `.env.example` with these fixe
 
 Definition of done:
 
-- [ ] `services/trading/executor.py` places paper orders through `alpaca-py`, with the paper-endpoint assertion in place
-- [ ] Risk checks are enforced and unit-tested independent of the live API (mocked)
+- [x] `services/trading/executor.py` places paper orders through `alpaca-py`, with the paper-endpoint assertion in place
+- [x] Risk checks are enforced and unit-tested independent of the live API (mocked)
 - [ ] Scheduled job runs reliably for at least several consecutive trading days with logged decisions and trades
 - [ ] Manual verification: trades appear correctly in the Alpaca paper dashboard
 
@@ -364,10 +364,10 @@ Definition of done:
 
 Definition of done:
 
-- [ ] All five pages built and wired to the FastAPI backend (no mock data left in by demo time)
-- [ ] Loading/error/empty states handled, not just the happy path
-- [ ] Responsive enough to demo on a laptop screen
-- [ ] A visible, persistent disclaimer: "Paper trading only — not financial advice"
+- [x] All five pages built and wired to the FastAPI backend (no mock data left in by demo time)
+- [x] Loading/error/empty states handled, not just the happy path
+- [x] Responsive enough to demo on a laptop screen
+- [x] A visible, persistent disclaimer: "Paper trading only — not financial advice"
 
 ---
 
@@ -377,90 +377,90 @@ Each phase lists concrete steps. Where useful, a literal prompt you can paste in
 
 ### Phase 0 — Environment Setup
 
-- [ ] `git init` (if not already), connect to GitHub remote
-- [ ] Create Python virtual environment in `backend/`: `python3 -m venv venv && source venv/bin/activate`
-- [ ] `pip install fastapi uvicorn[standard] sqlalchemy psycopg2-binary alembic pydantic pydantic-settings python-dotenv yfinance alpaca-py pandas numpy scikit-learn xgboost ta openai apscheduler pytest pytest-asyncio httpx`, then freeze: `pip freeze > backend/requirements.txt`
-- [ ] Scaffold frontend: `npm create vite@latest frontend -- --template react-ts`, then `cd frontend && npm install axios @tanstack/react-query recharts lightweight-charts -D tailwindcss postcss autoprefixer vitest @testing-library/react`
-- [ ] Fill in real values in a local `.env` (copied from `.env.example`, never committed)
-- [ ] Confirm Postgres is reachable (local install or `docker run postgres` for now; full docker-compose comes in Phase 11)
+- [x] `git init` (if not already), connect to GitHub remote
+- [x] Create Python virtual environment in `backend/`: `python3 -m venv venv && source venv/bin/activate`
+- [x] `pip install fastapi uvicorn[standard] sqlalchemy psycopg2-binary alembic pydantic pydantic-settings python-dotenv yfinance alpaca-py pandas numpy scikit-learn xgboost ta openai apscheduler pytest pytest-asyncio httpx`, then freeze: `pip freeze > backend/requirements.txt`
+- [x] Scaffold frontend: `npm create vite@latest frontend -- --template react-ts`, then `cd frontend && npm install axios @tanstack/react-query recharts lightweight-charts -D tailwindcss postcss autoprefixer vitest @testing-library/react`
+- [x] Fill in real values in a local `.env` (copied from `.env.example`, never committed)
+- [x] Confirm Postgres is reachable (local install or `docker run postgres` for now; full docker-compose comes in Phase 11)
 - Prompt: *"Read planning/plan.md sections 4-6. Set up the backend FastAPI skeleton (main.py, core/config.py reading from .env, db/session.py connecting to Postgres) and confirm `uvicorn app.main:app --reload` starts cleanly."*
 
 ### Phase 1 — Database & Models
 
-- [ ] Implement all tables from section 7 as SQLAlchemy models (including `TimestampMixin`, `backtest_run_id` FKs on positions/portfolio_snapshots, and `risk_flags` on llm_decisions)
-- [ ] Set up Alembic, generate and run the first migration
-- [ ] Auto-generate `database/schema.sql` via `pg_dump --schema-only` after migration runs — do not maintain it manually
+- [x] Implement all tables from section 7 as SQLAlchemy models (including `TimestampMixin`, `backtest_run_id` FKs on positions/portfolio_snapshots, and `risk_flags` on llm_decisions)
+- [x] Set up Alembic, generate and run the first migration
+- [x] Auto-generate `database/schema.sql` via `pg_dump --schema-only` after migration runs — do not maintain it manually
 
 ### Phase 2 — Historical Data Ingestion
 
-- [ ] Build `services/data_ingestion/yfinance_loader.py`: pull daily OHLCV for the watchlist, backfill 2-5 years, upsert into `price_bars` using `auto_adjust=True` (adjusted close only)
-- [ ] Build `services/data_ingestion/alpaca_loader.py`: pull recent/live bars via `alpaca-py` for the daily job
-- [ ] Build `services/data_ingestion/news_loader.py`: pull latest headlines per symbol via NewsAPI, upsert into `news_articles`; fundamentals ingestion is out of scope
-- [ ] Define the watchlist (start small: 5-15 liquid large-cap symbols, e.g., AAPL, MSFT, NVDA, SPY, QQQ — easy to extend later)
+- [x] Build `services/data_ingestion/yfinance_loader.py`: pull daily OHLCV for the watchlist, backfill 2-5 years, upsert into `price_bars` using `auto_adjust=True` (adjusted close only)
+- [x] Build `services/data_ingestion/alpaca_loader.py`: pull recent/live bars via `alpaca-py` for the daily job
+- [x] Build `services/data_ingestion/news_loader.py`: pull latest headlines per symbol via NewsAPI, upsert into `news_articles`; fundamentals ingestion is out of scope
+- [x] Define the watchlist (start small: 5-15 liquid large-cap symbols, e.g., AAPL, MSFT, NVDA, SPY, QQQ — easy to extend later)
 
 ### Phase 3 — Backend API Skeleton
 
-- [ ] Routers for: instruments/watchlist, price data, signals, decisions, trades, positions, portfolio, backtests; add a `GET /stream/portfolio` SSE endpoint stub (wire it fully in Phase 8)
-- [ ] Pydantic schemas mirroring the DB models for clean request/response typing
-- [ ] Basic error handling and logging middleware
-- [ ] Note: Phase 3 can only begin after Phase 1 models are finalized — Pydantic schemas must match the SQLAlchemy models
+- [x] Routers for: instruments/watchlist, price data, signals, decisions, trades, positions, portfolio, backtests; add a `GET /stream/portfolio` SSE endpoint stub (wire it fully in Phase 8)
+- [x] Pydantic schemas mirroring the DB models for clean request/response typing
+- [x] Basic error handling and logging middleware
+- [x] Note: Phase 3 can only begin after Phase 1 models are finalized — Pydantic schemas must match the SQLAlchemy models
 
 ### Phase 4 — Feature Engineering
 
-- [ ] Implement the full feature set from section 8 as pure functions over a price DataFrame
-- [ ] Unit test every feature against hand-computed expected values on a small fixture dataset
+- [x] Implement the full feature set from section 8 as pure functions over a price DataFrame
+- [x] Unit test every feature against hand-computed expected values on a small fixture dataset
 
 ### Phase 5 — ML Signal Model
 
-- [ ] Build the training pipeline with walk-forward validation
-- [ ] Save versioned model artifacts (e.g., `models/xgb_v1.json` + metadata)
-- [ ] Build the inference function used by both backtester and live job
-- [ ] Document out-of-sample validation results
+- [x] Build the training pipeline with walk-forward validation
+- [x] Save versioned model artifacts (e.g., `models/xgb_v1.json` + metadata)
+- [x] Build the inference function used by both backtester and live job
+- [x] Document out-of-sample validation results
 
 ### Phase 6 — LLM Reasoning Layer
 
-- [ ] Build context assembly, prompt template (versioned), and structured-output call to the LLM via Cerebras
-- [ ] Validate responses against a Pydantic schema; handle and log malformed responses gracefully
-- [ ] Persist decisions; mock-based unit tests for the parsing/validation logic
+- [x] Build context assembly, prompt template (versioned), and structured-output call to the LLM via Cerebras
+- [x] Validate responses against a Pydantic schema; handle and log malformed responses gracefully
+- [x] Persist decisions; mock-based unit tests for the parsing/validation logic
 - Prompt: *"Implement services/llm_reasoning/decision_engine.py per plan.md section 9. Use the openai Python SDK pointed at Cerebras (base_url=https://api.cerebras.ai/v1, api_key from LLM_API_KEY env var, model from LLM_MODEL env var, default gpt-oss-120b), structured output, and a Pydantic model to validate the JSON response. Mock the OpenAI client in tests — do not call the real API in the test suite."*
 
 ### Phase 7 — Backtesting Engine
 
-- [ ] Implement the day-by-day replay loop and fill simulation
-- [ ] Implement and unit-test all metrics (CAGR, Sharpe, max drawdown, win rate)
-- [ ] Run the shuffle sanity check and the buy-and-hold comparison
-- [ ] Store at least one full run in `backtest_runs`
+- [x] Implement the day-by-day replay loop and fill simulation
+- [x] Implement and unit-test all metrics (CAGR, Sharpe, max drawdown, win rate)
+- [x] Run the shuffle sanity check and the buy-and-hold comparison
+- [x] Store at least one full run in `backtest_runs`
 
 ### Phase 8 — Paper Trading Executor
 
-- [ ] Implement order placement via `alpaca-py` with the paper-endpoint startup assertion
-- [ ] Implement and unit-test risk checks independent of the live API
-- [ ] Wire the daily scheduled job (APScheduler in-process, or an endpoint triggered by cron/GitHub Actions schedule)
+- [x] Implement order placement via `alpaca-py` with the paper-endpoint startup assertion
+- [x] Implement and unit-test risk checks independent of the live API
+- [x] Wire the daily scheduled job (APScheduler in-process, or an endpoint triggered by cron/GitHub Actions schedule)
 - [ ] Let it run for several consecutive trading days before the demo; verify against the Alpaca paper dashboard
 
 ### Phase 9 — Frontend Dashboard
 
-- [ ] Build pages and components per section 12
-- [ ] Wire to real backend endpoints (no leftover mock data)
-- [ ] Add the paper-trading/not-financial-advice disclaimer
+- [x] Build pages and components per section 12
+- [x] Wire to real backend endpoints (no leftover mock data)
+- [x] Add the paper-trading/not-financial-advice disclaimer
 
 ### Phase 10 — Testing Pass
 
-- [ ] Confirm coverage on: features, ML inference, LLM response parsing (mocked), backtest metrics, risk checks, key API endpoints (httpx TestClient)
-- [ ] Add frontend component tests for at least the Signals and Dashboard pages
-- [ ] `pytest` and `npm test` both green before moving on
+- [x] Confirm coverage on: features, ML inference, LLM response parsing (mocked), backtest metrics, risk checks, key API endpoints (httpx TestClient)
+- [x] Add frontend component tests for at least the Signals and Dashboard pages
+- [x] `pytest` and `npm test` both green before moving on
 
 ### Phase 11 — Containerization & Deployment
 
-- [ ] Write `backend/Dockerfile`, `frontend/Dockerfile`, root `docker-compose.yml` (backend + Postgres + frontend)
+- [x] Write `backend/Dockerfile`, `frontend/Dockerfile`, root `docker-compose.yml` (backend + Postgres + frontend)
 - [ ] Confirm `docker-compose up` brings up the full stack locally
 - [ ] Deploy backend + Postgres to Render or Railway; deploy frontend to Vercel; set environment variables/secrets on each platform (never in the repo)
 - [ ] Set up the daily job in production (Render Cron Job, or a scheduled GitHub Actions workflow hitting the deployed endpoint)
-- [ ] Add a GitHub Actions workflow running `pytest` (and frontend tests/build) on every push
+- [x] Add a GitHub Actions workflow running `pytest` (and frontend tests/build) on every push
 
 ### Phase 12 — Documentation & Demo Prep
 
-- [ ] Update root `README.md` with setup instructions, architecture summary, and screenshots
+- [x] Update root `README.md` with setup instructions, architecture summary, and screenshots
 - [ ] Write up backtest results honestly (including underperformance vs buy-and-hold, if applicable) — this is what shows analytical maturity to evaluators
 - [ ] Prepare a 5-10 minute demo script: show the Signals page with the LLM's rationale, show a backtest run, show a live paper trade end-to-end, show test suite passing
 
